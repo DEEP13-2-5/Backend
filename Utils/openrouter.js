@@ -1,33 +1,54 @@
 import "dotenv/config";
 
 const getopenrouterResponse = async (message) => {
-  const options = {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "nex-agi/deepseek-v3.1-nex-n1:free",
-      messages: [
-        {
-          role: "user",
-          content: message,
-        },
-      ],
-    }),
+  const headers = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+    // Recommended by OpenRouter for rate limits and safety
+    "HTTP-Referer": process.env.APP_URL || "http://localhost:5173/",
+    "X-Title": process.env.APP_NAME || "SigmaGPT",
   };
 
+  const preferredModel = process.env.OPENROUTER_MODEL || "mistralai/devstral-2512:free";
+  const fallbackModel = process.env.OPENROUTER_FALLBACK_MODEL || "openrouter/auto";
+
+  const buildBody = (model) => ({
+    model :"mistralai/devstral-2512:free",
+    messages: [ { role: "user", content: message } ],
+  });
+
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", options);
+    // First try preferred model
+    let response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(buildBody(preferredModel)),
+    });
+
+    // On 404/400, retry once with fallback model
+    if (!response.ok && (response.status === 404 || response.status === 400)) {
+      response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(buildBody(fallbackModel)),
+      });
+    }
+
+    if (!response.ok) {
+      let detail = "";
+      try { detail = await response.text(); } catch {}
+      throw new Error(`API error: ${response.status} ${detail}`);
+    }
+
     const data = await response.json();
-    //reply
-   // console.log(data.choices[0].message.content);
+    if (!data?.choices?.[0]?.message?.content) {
+      throw new Error("Unexpected response structure");
+    }
     return data.choices[0].message.content;
   } catch (err) {
-    console.log("Error:", err);
-    res.status(500).send({ error: err.message });
+    console.error("OpenRouter error:", err?.message || err);
+    return null;
   }
-}
+};
 
 export default getopenrouterResponse;

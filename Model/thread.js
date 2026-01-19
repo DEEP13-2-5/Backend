@@ -25,13 +25,17 @@ const messageSchema = new mongoose.Schema({
 const threadSchema = new mongoose.Schema({
     threadId:{
         type:String,
-        require:true,
+        required:true,
         unique:true
     },
     title:{
         type:String,
         default:"New chat"
     },
+     model: {
+    type: String,
+    default: "openai/gpt-oss-120b:free",
+  },
     messages:[messageSchema],
     CreatedAt:{
         type:Date,
