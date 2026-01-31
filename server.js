@@ -35,7 +35,7 @@ start();
 
 app.get("/test",async(req,res) =>{
     res.json({
-        msg:"test was successful!"
+        msg:"Final test was successful!"
     })
 })
 
