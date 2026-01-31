@@ -9,11 +9,11 @@ const getopenrouterResponse = async (message) => {
     "X-Title": process.env.APP_NAME || "SigmaGPT",
   };
 
-  const preferredModel = process.env.OPENROUTER_MODEL || "mistralai/devstral-2512:free";
+  const preferredModel = process.env.OPENROUTER_MODEL || "arcee-ai/trinity-large-preview:free";
   const fallbackModel = process.env.OPENROUTER_FALLBACK_MODEL || "openrouter/auto";
 
   const buildBody = (model) => ({
-    model :"mistralai/devstral-2512:free",
+    model: model,
     messages: [ { role: "user", content: message } ],
   });
 
